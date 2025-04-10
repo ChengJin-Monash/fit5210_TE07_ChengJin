@@ -1,0 +1,11 @@
+Please one short paragraph (maximum 3 sentences) for the following CV clip, use the first-person perspective.
+Don't describe anything other than work experience.
+Don't describe anything other than work experience.
+Don't describe anything other than work experience.
+------
+Experience: Mailroom Supervisor at Australia Post (1991 - 2005)
+Experience: Administrative Assistant at City Council (2006 - 2021)
+Experience: Part-time Data Entry Specialist at Freelance (2022 - 2024)
+Description: Please add Description on work experience in maximum 1 paragraph.
+------
+Output as Description:
