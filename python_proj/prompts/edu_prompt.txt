@@ -1,9 +1,0 @@
-Please one short paragraph (maximum 3 sentences) for the following CV clip, use the first-person perspective.
-Don't describe anything other than education parts.
-Don't describe anything other than education parts.
-Don't describe anything other than education parts.
-------
-Education: Diploma of Office Administration at Sydney TAFE (1988 - 1990)
-Description: Please add Description on education history in maximum 1 paragraph.
-------
-Output as Description:
