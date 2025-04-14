@@ -1,0 +1,170 @@
+# === generator.py ===
+import os
+import time
+import re
+from llama_cpp import Llama
+from prompt_builder import (
+    build_profile_prompt,
+    build_education_prompt,
+    build_work_prompt
+)
+
+model_path = os.path.expanduser(
+    "/home/azureuser/tinyllama1b/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+)
+n_ctx = 2048
+temperature = 0.0
+top_k = 20
+repeat_penalty = 1.1
+
+llm = Llama(
+    model_path=model_path,
+    n_ctx=n_ctx,
+    verbose=False
+)
+
+def clean_text(text: str) -> str:
+    paragraphs = text.strip().split("\n\n")
+    cleaned = [re.sub(r"\s*\n\s*", " ", p.strip()) for p in paragraphs]
+    return "\n".join(cleaned)
+
+def trim_to_last_period(text: str) -> str:
+    text = text.strip()
+    if text.endswith("."):
+        return text
+    last_period = text.rfind(".")
+    return text[:last_period + 1] if last_period != -1 else text
+
+def clean_education_output(text: str) -> str:
+    text = clean_text(text)
+    return trim_to_last_period(text.split("------")[0])
+
+def generate_cv_text(user_info: dict) -> dict:
+    logs = []
+    def log(msg):
+        print(msg)
+        logs.append(msg)
+
+    edu_len = len(user_info.get("education", []))
+    work_len = len(user_info.get("work_experience", []))
+    total_len = edu_len + work_len
+
+    max_tokens_profile = int(((total_len / 2) + 0.5) * 60)
+    max_tokens_edu = int((edu_len + 0.5) * 60) if edu_len > 0 else 0
+    max_tokens_work = int((work_len + 0.5) * 60)
+
+    profile_prompt = build_profile_prompt(user_info)
+    edu_prompt = build_education_prompt(user_info) if edu_len > 0 else None
+    work_prompt = build_work_prompt(user_info)
+
+    def run_llama(prompt_text, label="", max_tokens=200):
+        log(f"🤖 Generating {label}...")
+        start = time.time()
+        output = llm(
+            prompt=prompt_text,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            repeat_penalty=repeat_penalty
+        )
+        duration = time.time() - start
+        log(f"✅ {label} done in {duration:.2f}s")
+        return trim_to_last_period(clean_text(output["choices"][0]["text"]))
+
+    profile_output = run_llama(profile_prompt, "Profile", max_tokens_profile)
+    education_output = run_llama(edu_prompt, "Education", max_tokens_edu) if edu_prompt else ""
+    work_output = run_llama(work_prompt, "Experience", max_tokens_work)
+
+    cv_heading = f"Name: {user_info.get('name', '[Unknown]')}\n" \
+                 f"Phone: [Please enter your phone number]\n" \
+                 f"E-mail: [Please enter your email address]"
+
+    profile_heading = "Profile:\n[You can briefly add a few sentences to describe yourself. Example:]"
+
+    education_list = [
+        f"{edu.get('degree_type', '')} of {edu.get('degree_name', '')} at {edu.get('institution', '')} ({edu.get('year_start', '')} - {edu.get('year_end', '')})"
+        for edu in user_info.get("education", [])
+    ]
+
+    experience_list = [
+        f"{w.get('job_title', '')} at {w.get('organization', '')} ({w.get('year_start', '')} - {w.get('year_end', '')})"
+        for w in user_info.get("work_experience", [])
+    ]
+
+    education_heading = (
+        "Education:\n[You can briefly describe your education experience. Example:]"
+        if education_list else
+        "Education:\n[You can fill in your education background here.]"
+    )
+
+    experience_heading = "Work Experience:\n[You can briefly describe your experience. Example:]"
+
+    lines = [cv_heading + "\n", profile_heading, profile_output + "\n"]
+    lines.append(education_heading)
+    if education_list:
+        lines.extend(education_list)
+        lines.append(education_output + "\n")
+    else:
+        lines.append("[You can fill in your education background here.]\n")
+
+    lines.append(experience_heading.split("\n")[0])
+    lines.extend(experience_list)
+    lines.append(work_output + "\n")
+
+    final_text = "\n".join(lines)
+    with open("cv_output.txt", "w", encoding="utf-8") as f:
+        f.write(final_text)
+    log("✅ CV saved to cv_output.txt")
+
+    return {
+        "cv_heading": cv_heading,
+        "profile_heading": profile_heading,
+        "profile_content": profile_output,
+        "education_heading": education_heading,
+        "education_list": education_list,
+        "education_content": education_output if education_list else "",
+        "experience_heading": experience_heading,
+        "experience_list": experience_list,
+        "experience_content": work_output,
+        "logs": logs
+    }
+
+
+def generate_cv_stream(user_info: dict):
+    def stream_log(msg):
+        print(msg)
+        yield msg + "\n"
+
+    edu_len = len(user_info.get("education", []))
+    work_len = len(user_info.get("work_experience", []))
+    total_len = edu_len + work_len
+
+    max_tokens_profile = int(((total_len / 2) + 0.5) * 60)
+    max_tokens_edu = int((edu_len + 0.5) * 60) if edu_len > 0 else 0
+    max_tokens_work = int((work_len + 0.5) * 60)
+
+    profile_prompt = build_profile_prompt(user_info)
+    edu_prompt = build_education_prompt(user_info) if edu_len > 0 else None
+    work_prompt = build_work_prompt(user_info)
+
+    def run_llama_stream(prompt_text, label="", max_tokens=200):
+        yield from stream_log(f"🤖 Generating {label}...")
+        start = time.time()
+        _ = llm(  # 不返回 text，只用于耗时推理
+            prompt=prompt_text,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            repeat_penalty=repeat_penalty
+        )
+        duration = time.time() - start
+        yield from stream_log(f"✅ {label} done in {duration:.2f}s")
+
+    yield from run_llama_stream(profile_prompt, "Profile", max_tokens_profile)
+    if edu_prompt:
+        yield from run_llama_stream(edu_prompt, "Education", max_tokens_edu)
+    yield from run_llama_stream(work_prompt, "Experience", max_tokens_work)
+
+    yield from stream_log("✅ All tasks completed!")
+
+
