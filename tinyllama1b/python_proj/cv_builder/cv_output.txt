@@ -1,0 +1,17 @@
+Name: Eastin 
+Phone: [Please enter your phone number]
+E-mail: [Please enter your email address]
+
+Profile:
+[You can briefly add a few sentences to describe yourself. Example:]
+I am a passionate software engineer with over 10 years of experience in the industry. I have worked on various projects ranging from small startups to large enterprises, and have gained extensive knowledge in various programming languages such as Java, C++, Python, and Ruby. My skills include designing and implementing complex systems using object-oriented programming techniques, as well as developing user interfaces using HTML, CSS, and JavaScript.
+
+Education:
+[You can briefly describe your education experience. Example:]
+Masters of Business at Monash (2020 - 2024)
+I graduated from Monash University with a Masters of Business in 2020. I have been working as a Financial Analyst for the past two years, and I am currently looking to apply for a position as a Finance Manager within the next six months. My education history includes completing my Bachelor's degree in Accounting from Monash University in 2018.
+
+Work Experience:
+Software engineer at Optus (2010 - 2020)
+I joined Optus in 2010 as a software engineer, and quickly progressed through the ranks to become a senior software engineer. In my current role, I am responsible for developing and maintaining software applications used by millions of customers every day.
+My experience includes working on complex projects such as the rollout of the Optus mobile network, which involved integrating multiple systems and software components into a single platform.
