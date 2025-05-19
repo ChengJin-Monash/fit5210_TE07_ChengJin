@@ -1,0 +1,18 @@
+Name: Cheng
+Phone: [Please enter your phone number]
+E-mail: [Please enter your email address]
+
+Profile:
+[You can briefly add a few sentences to describe yourself. Example:]
+I am a highly skilled and experienced Cyber Security Analyst with over 5 years of experience in the field. I have extensive knowledge in cyber security threat intelligence, incident response, vulnerability management, penetration testing, and network security. I am proficient in various cybersecurity tools such as Splunk, Nessus, Metasploit, and Wireshark. I have a strong background in AI, having worked on projects related to natural language processing, machine learning, and deep learning. I have experience with developing and deploying AI models for various applications, including fraud detection, sentiment analysis, and chatbot development.
+
+Education:
+[You can briefly describe your education experience. Example:]
+Master of Cyber security at Edith Cowan University (2020 - 2023)
+Master of AI at Monash (2023 - 2025)
+I graduated from Edith Cowan University in 2020 with a Master of Cybersecurity. I have also completed my Master of Artificial Intelligence at Monash University in 2023. My education history includes working as a software engineer for a tech startup, where I developed and deployed secure software solutions for various industries. Additionally, I have experience in cybersecurity research, where I conducted research on vulnerabilities in IoT devices and developed countermeasures to mitigate these risks.
+
+Work Experience:
+Cyber security analisist at Cisco (2020 - 2023)
+AI analisist at Monash (2023 - 2025)
+I have worked as a Cyber Security Analyst at CiScO for the past two years. During this time, I have gained experience in analyzing cyber threats and identifying vulnerabilities in systems. This has included conducting penetration testing, vulnerability assessments, and incident response planning. Additionally, I have worked on developing and implementing security policies and procedures to ensure compliance with industry standards and regulatory requirements. In my previous role as an AI Analyst at Monash University, I was responsible for designing and implementing machine learning models for predictive analytics. This involved working closely with data scientists and engineers to develop algorithms that could identify patterns in large datasets.
