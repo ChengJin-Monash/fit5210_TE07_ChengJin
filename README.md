@@ -1,8 +1,6 @@
-# Iteration 3 README
-
 ## Table of Contents
 1. [Project Overview](#project-overview)
-2. [New Features & Enhancements](#new-features--enhancements)
+2. [Features & Enhancements](#features--enhancements)
 3. [System Architecture](#system-architecture)
 4. [Directory Structure](#directory-structure)
 5. [Configuration Management](#configuration-management)
@@ -17,16 +15,51 @@
 ---
 
 ## Project Overview
-Iteration 3 enhances our dual microservice platform by integrating Google Gemini alongside TinyLLaMA for natural language generation. This update streamlines code, centralizes configuration, and introduces robust session management and reset capabilities. Both the **CV Builder API** and **Chatbot API** now support multi-model invocation and improved performance.
+This project delivers a cohesive dual-microservice platform—**CV Builder** and **Chatbot**—designed to streamline both professional résumé creation and personalized career guidance for job seekers.  
 
-## New Features & Enhancements
-- **Multi-Model Support**: Toggle between local TinyLLaMA (GGUF) and Google Gemini models for richer, context-aware outputs.
-- **Centralized Configuration**: All paths, keys, ports, and generation parameters are defined in `chatbot_config.py` or environment variables.
-- **Advanced Session Management**: Replaced `chat_session.py` with `session_manager.py` to persist, load, and reset user histories stored under `python_proj/chatbot/User/`.
-- **Session Reset Utility**: `chat_reset.sh` script calls the `/chat_reset` endpoint to clear one or all sessions for testing and maintenance.
-- **Runner Refactor**: `tinyllama_runner.py` caches model instances to reduce initialization overhead and unifies streaming vs. batch inference logic.
-- **CV Builder Simplification**: Retained a single `generator.py` for resume construction, discarding legacy experimental files for maintainability. Logs outputs to `cv_output.txt`.
-- **Dependency Management**: Added `requirements.txt` at project root and within each submodule for reproducible environments.
+- **Microservice Architecture**  
+  - **FastAPI Layer**: A single entrypoint routes requests to either the CV Builder (port 8000) or Chatbot (port 8001) service.  
+  - **CV Builder**:  
+    1. **Input**: Structured JSON containing name, education history, and work experience.  
+    2. **Prompt Construction**: `prompt_builder.py` loads section templates (`prompts/`) and fills in user data.  
+    3. **Inference**: `tinyllama_runner.py` invokes a local TinyLLaMA GGUF model, optionally streaming via SSE.  
+    4. **Output**: Assembled CV returned in one response or streamed section by section; every result is logged in `cv_output.txt`.  
+  - **Chatbot**:  
+    1. **Input**: User message plus stored conversation history.  
+    2. **Session Management**: `session_manager.py` persists, loads, and resets per-user histories under `python_proj/chatbot/User/`.  
+    3. **Prompt Assembly**: System prompt + history + query.  
+    4. **Inference**: Choice of local TinyLLaMA or remote Google Gemini via `gemini_runner.py`; supports both batch and streaming output.  
+    5. **Output**: Career advice tailored to mid-career demographics, delivered over HTTP or SSE.  
+
+- **Configuration & Deployment**  
+  - All model paths, API keys, ports, and generation parameters live in `chatbot_config.py` (overridable by environment variables).  
+  - `requirements.txt` files at the project root and in each submodule lock dependencies for reproducible setups.  
+  - `server_setup.sh` and `testing.sh` document the manual shell commands required for environment bootstrapping and endpoint verification.  
+  - Services can be launched with standard `uvicorn main:app` commands, facilitating rapid local testing and cloud deployment.
+
+
+## Features & Enhancements
+
+- **Multi-Model Inference**  
+  - Seamlessly switch between on-premises TinyLLaMA (GGUF) and Google Gemini for richer, context-aware outputs.  
+
+- **Centralized Configuration**  
+  - Unified `chatbot_config.py` consolidates all settings—model paths, ports, keys, token limits—backed by environment-variable overrides.  
+
+- **Robust Session Management & Reset**  
+  - Replaced previous ad-hoc session code with `session_manager.py` for reliable persistence.  
+  - Added `chat_reset.sh` and `/chat_reset` endpoint to clear individual or all histories for testing and maintenance.  
+
+- **Inference Runner Refactor**  
+  - Cached model instances reduce startup overhead.  
+  - Single interface in `tinyllama_runner.py` unifies streaming and batch modes, simplifying maintenance.  
+
+- **Code Consolidation**  
+  - Removed experimental branches (`generator.py_*`, `app.py_old`) to preserve a single, production-ready `generator.py`.  
+  - Enhanced logging of CV outputs to `cv_output.txt` for auditability.  
+
+- **Dependency Versioning**  
+  - Pinned Python packages in `requirements.txt` at both root and module levels to ensure consistent, repeatable installations.  
 
 ## System Architecture
 ```
