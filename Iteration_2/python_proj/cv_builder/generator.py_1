@@ -1,0 +1,159 @@
+import os
+import time
+import re
+from llama_cpp import Llama
+from prompt_builder import (
+    build_profile_prompt,
+    build_education_prompt,
+    build_work_prompt
+)
+
+# === Model config ===
+model_path = os.path.expanduser(
+    "/home/azureuser/tinyllama1b/models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+)
+n_ctx = 2048
+temperature = 0.0
+top_k = 20
+repeat_penalty = 1.1
+
+# Load model globally for performance
+llm = Llama(
+    model_path=model_path,
+    n_ctx=n_ctx,
+    verbose=False
+)
+
+def clean_text(text: str) -> str:
+    """Keep paragraph breaks, remove line breaks inside paragraphs."""
+    paragraphs = text.strip().split("\n\n")
+    cleaned = []
+    for p in paragraphs:
+        p = re.sub(r"\s*\n\s*", " ", p.strip())
+        cleaned.append(p)
+    return "\n".join(cleaned)
+
+def trim_to_last_period(text: str) -> str:
+    """If text does not end with a full stop, trim to the last full sentence."""
+    text = text.strip()
+    if text.endswith("."):
+        return text
+    last_period = text.rfind(".")
+    if last_period != -1:
+        return text[:last_period + 1]
+    return text  # fallback
+
+def clean_education_output(text: str) -> str:
+    """Extra cleaning for education to remove any unwanted trailing parts."""
+    text = clean_text(text)
+    return trim_to_last_period(text.split("------")[0])  # cut hallucinated sections
+
+def run_llama(prompt_text, label="", max_tokens=200):
+    print(f"🤖 Generating {label}...")
+    start = time.time()
+    output = llm(
+        prompt=prompt_text,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_k=top_k,
+        repeat_penalty=repeat_penalty
+    )
+    print(f"✅ {label} done in {time.time() - start:.2f}s")
+    return output["choices"][0]["text"].strip()
+
+def generate_cv_text(user_info: dict) -> dict:
+    # === Token control ===
+    edu_len = len(user_info.get("education", []))
+    work_len = len(user_info.get("work_experience", []))
+    total_len = edu_len + work_len
+
+    max_tokens_profile = int(((total_len / 2) + 0.5) * 60)
+    max_tokens_edu = int((edu_len + 0.5) * 60) if edu_len > 0 else 0
+    max_tokens_work = int((work_len + 0.5) * 60)
+
+    # === Build prompts ===
+    profile_prompt = build_profile_prompt(user_info)
+    edu_prompt = build_education_prompt(user_info) if edu_len > 0 else None
+    work_prompt = build_work_prompt(user_info)
+
+    # === Save prompts for debug
+    os.makedirs("prompts", exist_ok=True)
+    with open("prompts/profile_prompt.txt", "w", encoding="utf-8") as f:
+        f.write(profile_prompt)
+    if edu_prompt:
+        with open("prompts/edu_prompt.txt", "w", encoding="utf-8") as f:
+            f.write(edu_prompt)
+    with open("prompts/work_prompt.txt", "w", encoding="utf-8") as f:
+        f.write(work_prompt)
+
+    # === Run model
+    profile_output = trim_to_last_period(clean_text(
+        run_llama(profile_prompt, "Profile", max_tokens_profile)
+    ))
+    education_output = clean_education_output(
+        run_llama(edu_prompt, "Education", max_tokens_edu)
+    ) if edu_prompt else ""
+    work_output = trim_to_last_period(clean_text(
+        run_llama(work_prompt, "Experience", max_tokens_work)
+    ))
+
+    # === Structured Output
+    cv_heading = f"Name: {user_info.get('name', '[Unknown]')}\n" \
+                 f"Phone: [Please enter your phone number]\n" \
+                 f"E-mail: [Please enter your email address]"
+
+    profile_heading = "Profile:\n[You can briefly add a few sentences to describe yourself. Example:]"
+
+    education_list = [
+        f"{edu.get('degree_type', '')} of {edu.get('degree_name', '')} at {edu.get('institution', '')} "
+        f"({edu.get('year_start', '')} - {edu.get('year_end', '')})"
+        for edu in user_info.get("education", [])
+    ]
+
+    experience_list = [
+        f"{w.get('job_title', '')} at {w.get('organization', '')} "
+        f"({w.get('year_start', '')} - {w.get('year_end', '')})"
+        for w in user_info.get("work_experience", [])
+    ]
+
+    education_heading = (
+        "Education:\n[You can briefly describe your education experience. Example:]"
+        if education_list else
+        "Education:\n[You can fill in your education background here.]"
+    )
+    experience_heading = "Work Experience:\n[You can briefly describe your experience. Example:]"
+
+    # === Assemble text
+    lines = []
+    lines.append(cv_heading + "\n")
+    lines.append(profile_heading)
+    lines.append(profile_output + "\n")
+    lines.append(education_heading)
+    if education_list:
+        lines.extend(education_list)
+        lines.append(education_output + "\n")
+    else:
+        lines.append("[You can fill in your education background here.]\n")
+    lines.append(experience_heading.split("\n")[0])
+    lines.extend(experience_list)
+    lines.append(work_output + "\n")
+
+    final_text = "\n".join(lines)
+
+    # === Save text
+    with open("cv_output.txt", "w", encoding="utf-8") as f:
+        f.write(final_text)
+    print("✅ CV saved to cv_output.txt")
+
+    # === Return JSON structure
+    return {
+        "cv_heading": cv_heading,
+        "profile_heading": profile_heading,
+        "profile_content": profile_output,
+        "education_heading": education_heading,
+        "education_list": education_list,
+        "education_content": education_output if education_list else "",
+        "experience_heading": experience_heading,
+        "experience_list": experience_list,
+        "experience_content": work_output
+    }

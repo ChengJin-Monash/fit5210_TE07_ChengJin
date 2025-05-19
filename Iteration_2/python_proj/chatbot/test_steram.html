@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat Stream Test</title>
+</head>
+<body>
+  <h2>🧠 Stream Chat Demo</h2>
+  <input id="prompt" type="text" placeholder="Ask something..." style="width: 300px;">
+  <button onclick="startStream()">Send</button>
+  <pre id="output" style="white-space: pre-wrap;"></pre>
+
+  <script>
+    async function startStream() {
+      const prompt = document.getElementById("prompt").value;
+      const session_id = "test_user_001";
+      const output = document.getElementById("output");
+      output.textContent = "";
+
+      const response = await fetch("http://20.5.25.37:8001/chat_stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt, session_id })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        output.textContent += chunk;
+      }
+    }
+  </script>
+</body>
+</html>

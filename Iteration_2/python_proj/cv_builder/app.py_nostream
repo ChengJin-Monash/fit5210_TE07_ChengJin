@@ -1,0 +1,26 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from generator import generate_cv_text
+
+# Initialize FastAPI application
+app = FastAPI()
+
+# Define the data model for CV generation request using Pydantic
+class CVRequest(BaseModel):
+    name: str                               # Full name of the user
+    education: list = []                    # List of education history entries
+    work_experience: list = []              # List of work experience entries
+
+@app.post("/generate_cv")
+def generate_cv(request: CVRequest):
+    """
+    Endpoint to generate a CV based on structured input.
+
+    Parameters:
+        request (CVRequest): A validated request body containing user's name,
+                             education history, and work experience.
+
+    Returns:
+        dict: The generated CV content in dictionary format.
+    """
+    return generate_cv_text(request.dict())
